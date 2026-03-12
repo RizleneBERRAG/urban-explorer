@@ -1,16 +1,19 @@
 // /screens/DiscoveryScreen.tsx
-import React, { useEffect, useState } from "react";
-import { View, FlatList, ActivityIndicator, StyleSheet, Text } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import { View, FlatList, ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity } from "react-native";
 import LieuCard from "../components/LieuCard";
 import { Lieu, APIRecord, ApiResponse, CoordonneesGeo } from "../types/lieu";
 
 const DiscoveryScreen: React.FC = () => {
   const [lieux, setLieux] = useState<Lieu[]>([]);
+  const [filteredLieux, setFilteredLieux] = useState<Lieu[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [page, setPage] = useState<number>(0);
   const [hasMoreData, setHasMoreData] = useState<boolean>(true);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const LIMIT = 50;
   const [totalAvailable, setTotalAvailable] = useState<number>(0);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchLieux = async (pageNum: number) => {
     try {
@@ -82,8 +85,10 @@ const DiscoveryScreen: React.FC = () => {
         // Append new data or set initial data
         if (pageNum === 0) {
           setLieux(lieuxTransformes);
+          setFilteredLieux(lieuxTransformes);
         } else {
           setLieux(prev => [...prev, ...lieuxTransformes]);
+          setFilteredLieux(prev => [...prev, ...lieuxTransformes]);
         }
         
         // Check if there's more data - compare loaded count with total
@@ -106,7 +111,46 @@ const DiscoveryScreen: React.FC = () => {
 
   useEffect(() => {
     fetchLieux(0);
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
   }, []);
+
+  const handleSearch = (text: string) => {
+    setSearchQuery(text);
+    
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // If empty, show all lieux
+    if (!text.trim()) {
+      setFilteredLieux(lieux);
+      return;
+    }
+    
+    // Debounce: wait 500ms after user stops typing
+    searchTimeoutRef.current = setTimeout(() => {
+      const filtered = lieux.filter(lieu => 
+        lieu.nom_usuel.toLowerCase().includes(text.toLowerCase()) ||
+        (lieu.adresse && lieu.adresse.toLowerCase().includes(text.toLowerCase()))
+      );
+      setFilteredLieux(filtered);
+    }, 500);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setFilteredLieux(lieux);
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+  };
 
   const loadMoreData = () => {
     if (!loading && hasMoreData) {
@@ -140,8 +184,25 @@ const DiscoveryScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Rechercher un lieu..."
+          value={searchQuery}
+          onChangeText={handleSearch}
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={clearSearch} style={styles.clearButton}>
+            <Text style={styles.clearButtonText}>✕</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+      
       <FlatList
-        data={lieux}
+        data={filteredLieux}
         keyExtractor={(item, index) => index.toString()}
         renderItem={({ item }) => (
           <LieuCard
@@ -158,7 +219,7 @@ const DiscoveryScreen: React.FC = () => {
               Découvrir Paris
             </Text>
             <Text style={{ fontSize: 14, color: '#666', marginTop: 4 }}>
-              {lieux.length} / {totalAvailable} lieux à explorer
+              {filteredLieux.length} / {totalAvailable} lieux à explorer
             </Text>
           </View>
         }
@@ -166,7 +227,7 @@ const DiscoveryScreen: React.FC = () => {
           loading || !hasMoreData ? (
             <View style={{ padding: 20, alignItems: 'center' }}>
               {loading && <ActivityIndicator size="small" color="#007AFF" />}
-              {!hasMoreData && lieux.length > 0 && (
+              {!hasMoreData && filteredLieux.length > 0 && (
                 <Text style={{ color: '#666', marginTop: 10 }}>Aucun autre lieu disponible</Text>
               )}
             </View>
@@ -185,6 +246,35 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1,
     backgroundColor: "#f5f5f5",
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginVertical: 10,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: '#1a1a1a',
+  },
+  clearButton: {
+    marginLeft: 8,
+    padding: 4,
+  },
+  clearButtonText: {
+    fontSize: 18,
+    color: '#666',
+    fontWeight: '600',
   },
   loading: { 
     flex: 1, 
