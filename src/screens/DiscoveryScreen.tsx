@@ -11,6 +11,7 @@ const DiscoveryScreen: React.FC = () => {
   const [page, setPage] = useState<number>(0);
   const [hasMoreData, setHasMoreData] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [allLieuxLoaded, setAllLieuxLoaded] = useState<Lieu[]>([]);
   const LIMIT = 50;
   const [totalAvailable, setTotalAvailable] = useState<number>(0);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -86,9 +87,11 @@ const DiscoveryScreen: React.FC = () => {
         if (pageNum === 0) {
           setLieux(lieuxTransformes);
           setFilteredLieux(lieuxTransformes);
+          setAllLieuxLoaded(lieuxTransformes);
         } else {
           setLieux(prev => [...prev, ...lieuxTransformes]);
           setFilteredLieux(prev => [...prev, ...lieuxTransformes]);
+          setAllLieuxLoaded(prev => [...prev, ...lieuxTransformes]);
         }
         
         // Check if there's more data - compare loaded count with total
@@ -130,13 +133,13 @@ const DiscoveryScreen: React.FC = () => {
     
     // If empty, show all lieux
     if (!text.trim()) {
-      setFilteredLieux(lieux);
+      setFilteredLieux(allLieuxLoaded);
       return;
     }
     
     // Debounce: wait 500ms after user stops typing
     searchTimeoutRef.current = setTimeout(() => {
-      const filtered = lieux.filter(lieu => 
+      const filtered = allLieuxLoaded.filter(lieu => 
         lieu.nom_usuel.toLowerCase().includes(text.toLowerCase()) ||
         (lieu.adresse && lieu.adresse.toLowerCase().includes(text.toLowerCase()))
       );
@@ -146,7 +149,7 @@ const DiscoveryScreen: React.FC = () => {
 
   const clearSearch = () => {
     setSearchQuery("");
-    setFilteredLieux(lieux);
+    setFilteredLieux(allLieuxLoaded);
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
