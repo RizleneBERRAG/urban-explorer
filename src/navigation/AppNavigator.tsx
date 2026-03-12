@@ -2,7 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import React from 'react';
 
-import MapScreen from '../screens/MapScreen';
+import MapScreen from '../screens/mapscreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import DiscoveryStack from './DiscoveryStack';
 
