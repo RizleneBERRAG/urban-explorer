@@ -1,8 +1,9 @@
 // /screens/DiscoveryScreen.tsx
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useContext } from "react";
 import { View, FlatList, ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity } from "react-native";
 import LieuCard from "../components/LieuCard";
 import { Lieu, APIRecord, ApiResponse, CoordonneesGeo } from "../types/lieu";
+import { ThemeContext } from "../contexts/ThemeContext";
 
 const DiscoveryScreen: React.FC = () => {
   const [lieux, setLieux] = useState<Lieu[]>([]);
@@ -15,6 +16,7 @@ const DiscoveryScreen: React.FC = () => {
   const LIMIT = 50;
   const [totalAvailable, setTotalAvailable] = useState<number>(0);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { isDarkMode, toggleTheme } = useContext(ThemeContext);
 
   const fetchLieux = async (pageNum: number) => {
     try {
@@ -186,12 +188,38 @@ const DiscoveryScreen: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[
+      styles.container,
+      { backgroundColor: isDarkMode ? '#1a1a1a' : '#f5f5f5' }
+    ]}>
+      {/* Theme Toggle Button */}
+      <View style={styles.header}>
+        <Text style={[
+          styles.headerTitle,
+          { color: isDarkMode ? '#fff' : '#1a1a1a' }
+        ]}>Découvrir Paris</Text>
+        <TouchableOpacity 
+          style={[styles.themeButton, { backgroundColor: isDarkMode ? '#333' : '#e0e0e0' }]}
+          onPress={toggleTheme}
+        >
+          <Text style={styles.themeButtonText}>
+            {isDarkMode ? '☀️' : '🌙'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Search Bar */}
-      <View style={styles.searchContainer}>
+      <View style={[
+        styles.searchContainer,
+        { backgroundColor: isDarkMode ? '#2a2a2a' : '#fff' }
+      ]}>
         <TextInput
-          style={styles.searchInput}
+          style={[
+            styles.searchInput,
+            { color: isDarkMode ? '#fff' : '#1a1a1a' }
+          ]}
           placeholder="Rechercher un lieu..."
+          placeholderTextColor={isDarkMode ? '#888' : '#999'}
           value={searchQuery}
           onChangeText={handleSearch}
           autoCapitalize="none"
@@ -217,11 +245,8 @@ const DiscoveryScreen: React.FC = () => {
           />
         )}
         ListHeaderComponent={
-          <View style={{ padding: 20, backgroundColor: '#fff', marginBottom: 8 }}>
-            <Text style={{ fontSize: 32, fontWeight: 'bold', color: '#1a1a1a' }}>
-              Découvrir Paris
-            </Text>
-            <Text style={{ fontSize: 14, color: '#666', marginTop: 4 }}>
+          <View style={{ padding: 20, marginBottom: 8 }}>
+            <Text style={{ fontSize: 14, color: isDarkMode ? '#aaa' : '#666', marginTop: 4 }}>
               {filteredLieux.length} / {totalAvailable} lieux à explorer
             </Text>
           </View>
@@ -231,7 +256,7 @@ const DiscoveryScreen: React.FC = () => {
             <View style={{ padding: 20, alignItems: 'center' }}>
               {loading && <ActivityIndicator size="small" color="#007AFF" />}
               {!hasMoreData && filteredLieux.length > 0 && (
-                <Text style={{ color: '#666', marginTop: 10 }}>Aucun autre lieu disponible</Text>
+                <Text style={{ color: isDarkMode ? '#aaa' : '#666', marginTop: 10 }}>Aucun autre lieu disponible</Text>
               )}
             </View>
           ) : null
@@ -247,15 +272,36 @@ const DiscoveryScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: { 
-    flex: 1,
-    backgroundColor: "#f5f5f5",
+    flex:1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    paddingTop: 10,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+  },
+  themeButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  themeButtonText: {
+    fontSize: 20,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 16,
     marginVertical: 10,
-    backgroundColor: '#fff',
     borderRadius: 12,
     paddingHorizontal: 16,
     elevation: 2,
@@ -268,7 +314,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#1a1a1a',
   },
   clearButton: {
     marginLeft: 8,
@@ -283,14 +328,12 @@ const styles = StyleSheet.create({
     flex: 1, 
     justifyContent: "center", 
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
   },
   empty: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
-    backgroundColor: "#f5f5f5",
   },
   subtext: {
     color: "#666",

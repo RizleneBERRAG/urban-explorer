@@ -12,13 +12,16 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Cette application utilise la caméra pour permettre à l'utilisateur de prendre une photo de profil."
+        "NSCameraUsageDescription": "Cette application utilise la caméra pour permettre à l'utilisateur de prendre une photo de profil.",
+        "NSLocationWhenInUseUsageDescription": "Cette application utilise votre position pour afficher les lieux culturels à proximité sur la carte."
       }
     },
 
     "android": {
       "permissions": [
-        "CAMERA"
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",

@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import {
     Alert,
     Image,
@@ -9,9 +9,11 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { ThemeContext } from '../contexts/ThemeContext';
 
 export default function ProfileScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const { isDarkMode, toggleTheme } = useContext(ThemeContext);
 
   useEffect(() => {
     loadSavedImage();
@@ -58,12 +60,21 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Mon Profil</Text>
-      <Text style={styles.subtitle}>
-        Prenez un selfie souvenir directement depuis l’application.
+    <View style={[
+      styles.container,
+      { backgroundColor: isDarkMode ? '#1a1a1a' : '#fff' }
+    ]}>
+      <Text style={[
+        styles.title,
+        { color: isDarkMode ? '#fff' : '#1a1a1a' }
+      ]}>Mon Profil</Text>
+      <Text style={[
+        styles.subtitle,
+        { color: isDarkMode ? '#aaa' : '#666' }
+      ]}>
+        Prenez un selfie souvenir directement depuis l'application.
       </Text>
-
+  
       <Image
         source={{
           uri:
@@ -72,10 +83,16 @@ export default function ProfileScreen() {
         }}
         style={styles.avatar}
       />
-
+  
       <TouchableOpacity style={styles.button} onPress={takePhoto}>
         <Text style={styles.buttonText}>
           {imageUri ? 'Reprendre une photo' : 'Prendre une photo'}
+        </Text>
+      </TouchableOpacity>
+  
+      <TouchableOpacity style={[styles.button, styles.themeButton]} onPress={toggleTheme}>
+        <Text style={styles.buttonText}>
+          {isDarkMode ? 'Passer en mode clair ☀️' : 'Passer en mode sombre 🌙'}
         </Text>
       </TouchableOpacity>
     </View>
@@ -88,7 +105,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: '#fff',
   },
   title: {
     fontSize: 28,
@@ -98,7 +114,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 15,
     textAlign: 'center',
-    color: '#666',
     marginBottom: 24,
     lineHeight: 22,
   },
@@ -114,6 +129,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 22,
     borderRadius: 14,
+    marginBottom: 12,
+  },
+  themeButton: {
+    backgroundColor: '#007AFF',
   },
   buttonText: {
     color: '#fff',
