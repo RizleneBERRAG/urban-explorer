@@ -30,3 +30,29 @@ Consommation d’API
 Gestion de l’état avec React
 
 Utilisation de composants natifs
+
+
+
+## 2. Technologies Utilisées
+
+### Framework Mobile
+
+React Native
+
+Expo
+
+Langage
+
+TypeScript
+
+### Librairies principales
+
+React Navigation : gestion de la navigation entre les écrans
+
+react-native-maps : affichage de la carte et des marqueurs
+
+react-native-calendars : intégration du calendrier
+
+expo-image-picker / expo-camera : prise de photo pour le profil
+
+AsyncStorage (bonus) : sauvegarde locale des données
