@@ -5,6 +5,7 @@ import {
   Alert,
   Animated,
   Image,
+  Linking,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -49,14 +50,25 @@ export default function ProfileScreen() {
   };
 
   const takePhoto = async () => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    const permission = await ImagePicker.getCameraPermissionsAsync();
 
     if (!permission.granted) {
-      Alert.alert(
-        "Permission refusée",
-        "L'application a besoin de l'accès à la caméra."
-      );
-      return;
+      const request = await ImagePicker.requestCameraPermissionsAsync();
+
+      if (!request.granted) {
+        Alert.alert(
+          "Permission caméra requise",
+          "Pour ajouter une photo de profil, vous devez autoriser l'accès à la caméra dans les réglages.",
+          [
+            { text: "Annuler", style: "cancel" },
+            {
+              text: "Ouvrir les réglages",
+              onPress: () => Linking.openSettings(),
+            },
+          ]
+        );
+        return;
+      }
     }
 
     const result = await ImagePicker.launchCameraAsync({
@@ -67,7 +79,6 @@ export default function ProfileScreen() {
 
     if (!result.canceled) {
       const uri = result.assets[0].uri;
-
       setImageUri(uri);
 
       Animated.sequence([
@@ -94,7 +105,7 @@ export default function ProfileScreen() {
       <Text style={styles.title}>Mon Profil</Text>
 
       <Text style={styles.subtitle}>
-        Prenez un selfie souvenir de votre visite
+        Ajoutez ou modifiez votre photo de profil
       </Text>
 
       <Animated.View
@@ -159,11 +170,6 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     borderWidth: 4,
     borderColor: "#22c55e",
-
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
   },
 
   cameraButton: {
@@ -176,11 +182,6 @@ const styles = StyleSheet.create({
     borderRadius: 23,
     alignItems: "center",
     justifyContent: "center",
-
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
   },
 
   cameraIcon: {
@@ -193,11 +194,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 28,
     borderRadius: 12,
-
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
   },
 
   buttonText: {

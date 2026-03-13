@@ -1,118 +1,123 @@
+import * as Location from "expo-location"
 import React, { useEffect, useState } from "react"
-import { StyleSheet, View, Text, ActivityIndicator, Alert } from "react-native"
+import { ActivityIndicator, Alert, Linking, StyleSheet, Text, View } from "react-native"
 import MapView, { Marker } from "react-native-maps"
-import * as Location from 'expo-location';
-import { Lieu, APIRecord } from "../types/lieu"
+import { APIRecord, Lieu } from "../types/lieu"
 
 export default function MapScreen() {
   const [lieux, setLieux] = useState<Lieu[]>([])
-  const [loading, setLoading] = useState<boolean>(true)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [userLocation, setUserLocation] = useState<{latitude: number, longitude: number} | null>(null)
+  const [userLocation, setUserLocation] = useState<{latitude:number,longitude:number}|null>(null)
 
   useEffect(() => {
-    // Request location permission
     const requestLocationPermission = async () => {
       try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        
-        if (status !== 'granted') {
+        const { status } = await Location.requestForegroundPermissionsAsync()
+
+        if (status !== "granted") {
           Alert.alert(
-            'Permission requise',
-            "L'application a besoin de l'accès à votre localisation pour afficher la carte.",
+            "Permission localisation requise",
+            "L'application a besoin de votre position pour afficher la carte.",
             [
-              { text: 'OK', onPress: () => loadDefaultLocation() }
+              {
+                text: "Continuer sans localisation",
+                onPress: () => loadDefaultLocation(),
+              },
+              {
+                text: "Ouvrir les réglages",
+                onPress: () => Linking.openSettings(),
+              },
             ]
-          );
-          return;
+          )
+          return
         }
 
         const currentLocation = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
-        });
-        
+        })
+
         setUserLocation({
           latitude: currentLocation.coords.latitude,
           longitude: currentLocation.coords.longitude,
-        });
-        
-        console.log("User location:", currentLocation.coords.latitude, currentLocation.coords.longitude);
+        })
+
       } catch (err) {
-        console.error("Location error:", err);
-        loadDefaultLocation();
+        console.log("Erreur localisation", err)
+        loadDefaultLocation()
       }
-    };
+    }
 
     const loadDefaultLocation = () => {
-      // Default to Paris center if permission denied or error
       setUserLocation({
         latitude: 48.8566,
         longitude: 2.3522,
-      });
-    };
+      })
+    }
 
-    requestLocationPermission();
-  }, []);
+    requestLocationPermission()
+  }, [])
 
   useEffect(() => {
-    // Fetch lieux data
     fetch(
       "https://opendata.paris.fr/api/records/1.0/search/?dataset=que-faire-a-paris-&rows=50"
     )
       .then((res) => res.json())
-      .then((data: any) => {
-        console.log("Map API Response:", data);
-        if (data.records && Array.isArray(data.records)) {
-          // Adapter au vrai format de l'API avec coordinates fallback
-          const lieuxTransformes: Lieu[] = data.records
-            .filter((record: APIRecord) => {
-              // Filter out entries without valid coordinates
-              const hasCoords = record.fields.coordonnees_geo || 
-                               (record.geometry?.coordinates && record.geometry.coordinates.length === 2);
-              if (!hasCoords) {
-                console.log("Skipping entry without coords:", record.fields.nom_usuel || record.fields.title);
-              }
-              return hasCoords;
+      .then((data:any) => {
+        if (data.records) {
+          const lieuxTransformes:Lieu[] = data.records
+            .filter((record:APIRecord) => {
+              return (
+                record.fields.coordonnees_geo ||
+                (record.geometry?.coordinates &&
+                  record.geometry.coordinates.length === 2)
+              )
             })
-            .map((item: APIRecord) => {
-              let coords = item.fields.coordonnees_geo;
-              
-              // Fallback to geometry.coordinates if coordonnees_geo is missing
+            .map((item:APIRecord) => {
+              let coords = item.fields.coordonnees_geo
+
               if (!coords && item.geometry?.coordinates) {
                 coords = {
                   lat: item.geometry.coordinates[1],
-                  lon: item.geometry.coordinates[0]
-                };
+                  lon: item.geometry.coordinates[0],
+                }
               }
-              
+
               return {
                 id: item.recordid,
-                nom_usuel: item.fields.title || item.fields.nom_usuel || 'Sans titre',
-                adresse: item.fields.address_name || item.fields.adresse || '',
+                nom_usuel:
+                  item.fields.title ||
+                  item.fields.nom_usuel ||
+                  "Sans titre",
+                adresse:
+                  item.fields.address_name ||
+                  item.fields.adresse ||
+                  "",
                 coordonnees_geo: coords || null,
-                image: item.fields.cover_url || item.fields.main_image || item.fields.image || 'https://picsum.photos/200/200',
-              };
-            });
-          
-          console.log("Map lieux with coordinates:", lieuxTransformes.length);
-          setLieux(lieuxTransformes);
+                image:
+                  item.fields.cover_url ||
+                  "https://picsum.photos/200/200",
+              }
+            })
+
+          setLieux(lieuxTransformes)
         }
-        setLoading(false);
+
+        setLoading(false)
       })
-      .catch((err) => {
-        console.error("Map API Error:", err);
-        setError("Erreur de chargement des données");
-        setLoading(false);
-      });
-  }, []);
+      .catch(() => {
+        setError("Erreur de chargement des données")
+        setLoading(false)
+      })
+  }, [])
 
   if (loading || !userLocation) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={{marginTop: 10}}>Chargement de la carte...</Text>
+        <Text style={{ marginTop: 10 }}>Chargement de la carte...</Text>
       </View>
-    );
+    )
   }
 
   if (error) {
@@ -120,7 +125,7 @@ export default function MapScreen() {
       <View style={styles.error}>
         <Text>{error}</Text>
       </View>
-    );
+    )
   }
 
   return (
@@ -133,28 +138,20 @@ export default function MapScreen() {
           latitudeDelta: 0.05,
           longitudeDelta: 0.05,
         }}
-        showsUserLocation={true}
-        followsUserLocation={false}
+        showsUserLocation
       >
-        {/* User location marker */}
-        {userLocation && (
-          <Marker
-            coordinate={{
-              latitude: userLocation.latitude,
-              longitude: userLocation.longitude,
-            }}
-            title="Votre position"
-            description="Vous êtes ici"
-            pinColor="blue"
-          />
-        )}
-        
-        {/* Cultural places markers */}
+        <Marker
+          coordinate={{
+            latitude: userLocation.latitude,
+            longitude: userLocation.longitude,
+          }}
+          title="Votre position"
+          pinColor="blue"
+        />
+
         {lieux.map((lieu, index) => {
-          if (!lieu.coordonnees_geo) {
-            console.log("Skipping marker without coords:", lieu.nom_usuel);
-            return null;
-          }
+          if (!lieu.coordonnees_geo) return null
+
           return (
             <Marker
               key={index}
@@ -173,21 +170,16 @@ export default function MapScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container:{flex:1},
+  map:{flex:1},
+  loading:{
+    flex:1,
+    justifyContent:"center",
+    alignItems:"center",
   },
-  map: {
-    flex: 1,
+  error:{
+    flex:1,
+    justifyContent:"center",
+    alignItems:"center",
   },
-  loading: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  error: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-}); 
+})
